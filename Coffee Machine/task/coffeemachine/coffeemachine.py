@@ -1,3 +1,20 @@
+# Class of coffee types
+class __Coffee:
+    def __init__(self, name, water, milk, beans, money):
+        self.name = name
+        self.water = water
+        self.milk = milk
+        self.beans = beans
+        self.money = money
+
+
+coffee_data = [__Coffee("espresso", 250, 0, 16, 4),
+               __Coffee("latte", 350, 75, 20, 7),
+               __Coffee("cappuccino", 200, 100, 12, 6)]
+
+
+# State pattern:
+# General state class
 class __State:
     name = None
     allowed = []
@@ -13,20 +30,24 @@ class __State:
         return self.name
 
 
+# Menu state
 class MenuState(__State):
     name = "menu"
     allowed = ["buy", "fill_water"]
     msg = "Write action (buy, fill, take, remaining, exit): "
 
 
+# Buy menu state
+# Get name of coffee for state's msg from coffee_data
 class BuyState(__State):
     name = "buy"
     allowed = ["menu"]
-    msg = "What do you want to buy? " \
-          "1 - espresso, " \
-          "2 - latte, " \
-          "3 - cappuccino, " \
-          "back - to main menu: "
+    msg = "What do you want to buy? "
+    i = 1
+    for coffee in coffee_data:
+        msg += f'{i} - {coffee.name}, '
+        i += 1
+    msg += "back - to main menu: "
 
 
 class FillWaterState(__State):
@@ -54,17 +75,6 @@ class FillCupsState(__State):
 
 
 class CoffeeMachine:
-    class __Coffee:
-        def __init__(self, water, milk, beans, money):
-            self.water = water
-            self.milk = milk
-            self.beans = beans
-            self.money = money
-
-    coffee_data = [__Coffee(250, 0, 16, 4),
-                   __Coffee(350, 75, 20, 7),
-                   __Coffee(200, 100, 12, 6)]
-
     def __init__(self):
         self.milk = 540
         self.water = 400
@@ -95,19 +105,20 @@ class CoffeeMachine:
             print(self.state.msg)
 
     def make_coffee(self, coffee):
-        self.water -= self.coffee_data[coffee].water
-        self.milk -= self.coffee_data[coffee].milk
-        self.beans -= self.coffee_data[coffee].beans
-        self.money += self.coffee_data[coffee].money
+        self.water -= coffee_data[coffee].water
+        self.milk -= coffee_data[coffee].milk
+        self.beans -= coffee_data[coffee].beans
+        self.money += coffee_data[coffee].money
         self.cups -= 1
 
     def __dispatch_buy(self, req):
+        # Check needed resources for making coffee
         def check_res(coffee):
-            if self.water < self.coffee_data[coffee].water:
+            if self.water < coffee_data[coffee].water:
                 return False, "water"
-            if self.milk < self.coffee_data[coffee].milk:
+            if self.milk < coffee_data[coffee].milk:
                 return False, "milk"
-            if self.beans < self.coffee_data[coffee].beans:
+            if self.beans < coffee_data[coffee].beans:
                 return False, "coffee beans"
             if self.cups == 0:
                 return False, "disposable cups"
@@ -124,6 +135,7 @@ class CoffeeMachine:
         self.state.switch(MenuState)
         print(self.state.msg)
 
+    # Dispatcher of request for fill state
     def __dispatch_fill(self, req):
         if isinstance(self.state, FillWaterState):
             self.water += int(req)
@@ -142,6 +154,7 @@ class CoffeeMachine:
             self.state.switch(MenuState)
             print(self.state.msg)
 
+    # General dispatcher of requests to coffee machine
     def dispatch(self, req):
         if isinstance(self.state, MenuState):
             if req == "exit":
